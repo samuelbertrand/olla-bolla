@@ -1,0 +1,7 @@
+{
+  "name": "Olla Bolla",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "react"
+}
