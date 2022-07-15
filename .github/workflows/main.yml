@@ -17,7 +17,6 @@ on:
 jobs:
   # This workflow contains a single job called "build"
   build:
-    # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
     # Steps represent a sequence of tasks that will be executed as part of the job
@@ -57,3 +56,31 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+  deploy:
+    runs-on: ubuntu-latest
+    environment: prod
+    needs: build
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+      -
+        name: Transfer Docker Compose file to swarm manager
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          port: ${{ secrets.SSH_PORT }}
+          key: ${{ secrets.SSH_KEY }}
+          source: "compose.yaml"
+          target: "olla-bolla"
+      -
+        name: Create/Update Docker stack on swarm manager
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          port: ${{ secrets.SSH_PORT }}
+          key: ${{ secrets.SSH_KEY }}
+          script: docker stack deploy --compose-file olla-bolla/compose.yaml olla-bolla
